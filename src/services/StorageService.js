@@ -1,3 +1,5 @@
+// services/StorageService.js
+
 /**
  * Save data to local storage
  * @param {string} key - The key to save under

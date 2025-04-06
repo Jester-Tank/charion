@@ -7,6 +7,8 @@
         <div class="stats mb-3">
           <h3>Snow: {{ formatNumber(snowAmount) }} ❄️</h3>
           <p>Per Click: {{ formatNumber(snowPerClick) }} | Per Second: {{ formatNumber(snowPerSecond) }}</p>
+          <p class="text-muted small">Total Snow Ever: {{ formatNumber(totalSnowEver) }} | Clicks: {{ formatNumber(totalClicks) }}</p>
+          <p class="text-muted small">Time Played: {{ formatTime(totalTimePlayed) }}</p>
         </div>
       </div>
 
@@ -20,14 +22,100 @@
           <p class="mt-2">Click to make snow!</p>
         </div>
 
-        <!-- Achievements section -->
+        <!-- Achievements section with tabs -->
         <div class="achievements mt-4">
-          <h3>Achievements</h3>
-          <div class="row">
-            <div v-for="achievement in achievements" :key="achievement.id" class="col-6 col-md-4 mb-2">
-              <div class="achievement-card p-2" :class="{ 'achieved': achievement.achieved }">
-                <h5>{{ achievement.name }}</h5>
-                <p>{{ achievement.description }}</p>
+          <h3>Achievements ({{ completedAchievements.length }}/{{ achievements.length }})</h3>
+          <ul class="nav nav-tabs" id="achievementTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-achievements" 
+                      type="button" role="tab" aria-controls="all-achievements" aria-selected="true">
+                All
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="collection-tab" data-bs-toggle="tab" data-bs-target="#collection-achievements" 
+                      type="button" role="tab" aria-controls="collection-achievements" aria-selected="false">
+                Collection
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="clicks-tab" data-bs-toggle="tab" data-bs-target="#clicks-achievements" 
+                      type="button" role="tab" aria-controls="clicks-achievements" aria-selected="false">
+                Clicks
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="production-tab" data-bs-toggle="tab" data-bs-target="#production-achievements" 
+                      type="button" role="tab" aria-controls="production-achievements" aria-selected="false">
+                Production
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="special-tab" data-bs-toggle="tab" data-bs-target="#special-achievements" 
+                      type="button" role="tab" aria-controls="special-achievements" aria-selected="false">
+                Special
+              </button>
+            </li>
+          </ul>
+          
+          <div class="tab-content pt-3" id="achievementTabContent">
+            <!-- All Achievements tab -->
+            <div class="tab-pane fade show active" id="all-achievements" role="tabpanel" aria-labelledby="all-tab">
+              <div class="row">
+                <div v-for="achievement in achievements" :key="achievement.id" class="col-6 col-md-4 mb-2">
+                  <div class="achievement-card p-2" :class="{ 'achieved': achievement.achieved }">
+                    <h5>{{ achievement.icon }} {{ achievement.name }}</h5>
+                    <p class="mb-0">{{ achievement.description }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Collection Achievements tab -->
+            <div class="tab-pane fade" id="collection-achievements" role="tabpanel" aria-labelledby="collection-tab">
+              <div class="row">
+                <div v-for="achievement in achievementsByType('totalSnow')" :key="achievement.id" class="col-6 col-md-4 mb-2">
+                  <div class="achievement-card p-2" :class="{ 'achieved': achievement.achieved }">
+                    <h5>{{ achievement.icon }} {{ achievement.name }}</h5>
+                    <p class="mb-0">{{ achievement.description }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Clicks Achievements tab -->
+            <div class="tab-pane fade" id="clicks-achievements" role="tabpanel" aria-labelledby="clicks-tab">
+              <div class="row">
+                <div v-for="achievement in achievementsByType('totalClicks')" :key="achievement.id" class="col-6 col-md-4 mb-2">
+                  <div class="achievement-card p-2" :class="{ 'achieved': achievement.achieved }">
+                    <h5>{{ achievement.icon }} {{ achievement.name }}</h5>
+                    <p class="mb-0">{{ achievement.description }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Production Achievements tab -->
+            <div class="tab-pane fade" id="production-achievements" role="tabpanel" aria-labelledby="production-tab">
+              <div class="row">
+                <div v-for="achievement in productionAchievements" :key="achievement.id" class="col-6 col-md-4 mb-2">
+                  <div class="achievement-card p-2" :class="{ 'achieved': achievement.achieved }">
+                    <h5>{{ achievement.icon }} {{ achievement.name }}</h5>
+                    <p class="mb-0">{{ achievement.description }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Special Achievements tab -->
+            <div class="tab-pane fade" id="special-achievements" role="tabpanel" aria-labelledby="special-tab">
+              <div class="row">
+                <div v-for="achievement in achievementsByType('special')" :key="achievement.id" class="col-6 col-md-4 mb-2">
+                  <div class="achievement-card p-2" :class="{ 'achieved': achievement.achieved }">
+                    <h5>{{ achievement.icon }} {{ achievement.name }}</h5>
+                    <p class="mb-0">{{ achievement.description }}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -42,14 +130,14 @@
           <div class="list-group">
             <button v-for="upgrade in visibleUpgrades" :key="upgrade.id"
                     class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                    :class="{ 'disabled': upgrade.purchased || snowAmount < upgrade.cost }"
+                    :class="{ 'disabled': isUpgradeMaxed(upgrade) || snowAmount < getUpgradeNextLevelCost(upgrade) }"
                     @click="buyUpgrade(upgrade)">
               <div>
-                <h5>{{ upgrade.name }}</h5>
+                <h5>{{ upgrade.icon }} {{ upgrade.name }}</h5>
                 <p class="mb-0">{{ upgrade.description }}</p>
               </div>
-              <span v-if="!upgrade.purchased" class="badge bg-primary">{{ formatNumber(upgrade.cost) }} ❄️</span>
-              <span v-else class="badge bg-success">Purchased</span>
+              <span v-if="!isUpgradeMaxed(upgrade)" class="badge bg-primary">{{ formatNumber(getUpgradeNextLevelCost(upgrade)) }} ❄️</span>
+              <span v-else class="badge bg-success">MAX</span>
             </button>
           </div>
         </div>
@@ -60,20 +148,60 @@
           <div class="list-group">
             <button v-for="generator in visibleGenerators" :key="generator.id"
                     class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                    :class="{ 'disabled': snowAmount < calculateGeneratorCost(generator) }"
+                    :class="{ 'disabled': snowAmount < getGeneratorCost(generator) }"
                     @click="buyGenerator(generator)">
               <div>
-                <h5>{{ generator.name }} <span class="badge bg-secondary">{{ generator.count }}</span></h5>
+                <h5>{{ generator.icon }} {{ generator.name }} <span class="badge bg-secondary">{{ generator.count }}</span></h5>
                 <p class="mb-0">{{ generator.description }}</p>
+                <p class="text-muted small">Currently producing: {{ formatNumber(getGeneratorProduction(generator)) }}/sec</p>
               </div>
-              <span class="badge bg-primary">{{ formatNumber(calculateGeneratorCost(generator)) }} ❄️</span>
+              <span class="badge bg-primary">{{ formatNumber(getGeneratorCost(generator)) }} ❄️</span>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Footer with reset button -->
+      <!-- Stats & Controls -->
       <div class="col-12 text-center my-4">
+        <div class="mb-3">
+          <h4>Stats</h4>
+          <div class="row justify-content-center">
+            <div class="col-6 col-md-3">
+              <div class="card stat-card">
+                <div class="card-body">
+                  <h5 class="card-title">Achievements</h5>
+                  <p class="card-text">{{ completedAchievements.length }}/{{ achievements.length }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card stat-card">
+                <div class="card-body">
+                  <h5 class="card-title">Total Clicks</h5>
+                  <p class="card-text">{{ formatNumber(totalClicks) }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card stat-card">
+                <div class="card-body">
+                  <h5 class="card-title">Generators</h5>
+                  <p class="card-text">{{ generatorCount }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card stat-card">
+                <div class="card-body">
+                  <h5 class="card-title">Time Played</h5>
+                  <p class="card-text">{{ formatTime(totalTimePlayed) }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls -->
         <button class="btn btn-danger" @click="confirmReset">Reset Game</button>
       </div>
     </section>
@@ -81,31 +209,56 @@
 </template>
 
 <script>
-import { computed } from 'vue'
 import { AppState } from '../AppState.js'
+import { computed, onMounted } from 'vue'
 import { snowService } from '../services/SnowService.js'
 
 export default {
   setup() {
-    // Load saved game when component mounts
-    snowService.loadGame()
+    // Initialize the game when component mounts
+    onMounted(() => {
+      snowService.init()
+    })
 
     // Computed properties
     const snowAmount = computed(() => AppState.snowAmount)
     const snowPerClick = computed(() => AppState.snowPerClick)
     const snowPerSecond = computed(() => AppState.snowPerSecond)
+    const totalSnowEver = computed(() => AppState.totalSnowEver)
+    const totalClicks = computed(() => AppState.totalClicks)
+    const totalTimePlayed = computed(() => AppState.totalTimePlayed)
     
     const visibleUpgrades = computed(() => {
-      return AppState.upgrades.filter(upgrade => upgrade.visible && !upgrade.purchased)
+      return AppState.upgrades.filter(upgrade => upgrade.visible && upgrade.unlocked)
     })
     
     const visibleGenerators = computed(() => {
-      return AppState.generators.filter(generator => generator.visible)
+      return AppState.generators.filter(generator => generator.visible && generator.unlocked)
     })
     
     const achievements = computed(() => AppState.achievements)
-
+    
+    const completedAchievements = computed(() => {
+      return AppState.achievements.filter(achievement => achievement.achieved)
+    })
+    
+    const generatorCount = computed(() => {
+      return AppState.generators.reduce((total, generator) => total + generator.count, 0)
+    })
+    
+    const productionAchievements = computed(() => {
+      return AppState.achievements.filter(achievement => 
+        achievement.type === 'generatorsPurchased' || 
+        achievement.type === 'snowPerSecond' || 
+        achievement.type === 'upgradesPurchased'
+      )
+    })
+    
     // Methods
+    function achievementsByType(type) {
+      return AppState.achievements.filter(achievement => achievement.type === type)
+    }
+    
     function makeSnow() {
       snowService.makeSnow()
     }
@@ -114,12 +267,24 @@ export default {
       snowService.buyUpgrade(upgrade)
     }
     
+    function getUpgradeNextLevelCost(upgrade) {
+      return snowService.getUpgradeNextLevelCost(upgrade)
+    }
+    
+    function isUpgradeMaxed(upgrade) {
+      return snowService.isUpgradeMaxed(upgrade)
+    }
+    
     function buyGenerator(generator) {
       snowService.buyGenerator(generator)
     }
     
-    function calculateGeneratorCost(generator) {
-      return snowService.calculateGeneratorCost(generator)
+    function getGeneratorCost(generator) {
+      return snowService.getGeneratorCost(generator)
+    }
+    
+    function getGeneratorProduction(generator) {
+      return snowService.getGeneratorProduction(generator)
     }
     
     function confirmReset() {
@@ -137,20 +302,45 @@ export default {
         return Math.floor(number)
       }
     }
+    
+    function formatTime(seconds) {
+      const hours = Math.floor(seconds / 3600)
+      const minutes = Math.floor((seconds % 3600) / 60)
+      const remainingSeconds = seconds % 60
+      
+      if (hours > 0) {
+        return `${hours}h ${minutes}m ${remainingSeconds}s`
+      } else if (minutes > 0) {
+        return `${minutes}m ${remainingSeconds}s`
+      } else {
+        return `${remainingSeconds}s`
+      }
+    }
 
     return {
       snowAmount,
       snowPerClick,
       snowPerSecond,
+      totalSnowEver,
+      totalClicks,
+      totalTimePlayed,
       visibleUpgrades,
       visibleGenerators,
       achievements,
+      completedAchievements,
+      generatorCount,
+      productionAchievements,
+      achievementsByType,
       makeSnow,
       buyUpgrade,
+      getUpgradeNextLevelCost,
+      isUpgradeMaxed,
       buyGenerator,
-      calculateGeneratorCost,
+      getGeneratorCost,
+      getGeneratorProduction,
       confirmReset,
-      formatNumber
+      formatNumber,
+      formatTime
     }
   }
 }
@@ -202,5 +392,15 @@ export default {
   padding: 10px;
   border-radius: 10px;
   display: inline-block;
+}
+
+.stat-card {
+  height: 100px;
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 </style>
