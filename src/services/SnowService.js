@@ -1,8 +1,7 @@
 // services/SnowService.js
+// services/SnowService.js
 import { AppState } from '../AppState.js'
-import { saveState, loadState } from './StorageService.js';
-import { Upgrade } from '../models/Upgrade.js'
-import { Generator } from '@/models/Generator.js';
+import { saveState, loadState } from './StorageService.js'
 
 class SnowService {
     constructor() {
@@ -42,28 +41,90 @@ class SnowService {
     }
 
     /**
+     * Check if a click results in a critical hit
+     * @returns {boolean} - Whether this click is a critical hit
+     */
+    checkForCriticalHit() {
+        // Get the current critical hit chance
+        const critChance = AppState.criticalHitChance;
+
+        // Generate a random number between 0 and 1
+        const roll = Math.random();
+
+        // If the roll is less than the critical hit chance, it's a critical hit
+        return roll < critChance;
+    }
+
+    /**
+     * Calculate the snow gained from a critical hit
+     * @returns {number} - The amount of snow from the critical hit
+     */
+    calculateCriticalHitSnow() {
+        // Base snow multiplied by the critical hit multiplier
+        const critSnow = AppState.snowPerClick * AppState.criticalHitMultiplier;
+
+        // Track that a critical hit was landed
+        AppState.criticalHitsLanded++;
+
+        // Check for critical hit related achievements
+        this.checkAchievements();
+
+        // Return the amount of snow gained
+        return critSnow;
+    }
+
+    /**
+     * Create a visual effect for a critical hit
+     */
+    createCriticalHitEffect() {
+        // This would be implemented with DOM manipulation in a real app
+        // For now, we'll just log to the console
+        console.log('⚡ CRITICAL HIT! ⚡');
+    }
+
+    /**
      * Handle clicking to make snow
+     * @returns {Object} Result containing if it was a critical hit and amount of snow gained
      */
     makeSnow() {
-        AppState.snowAmount += AppState.snowPerClick
-        AppState.totalSnowEver += AppState.snowPerClick
-        AppState.totalClicks++
+        // Check for a critical hit
+        const isCriticalHit = this.checkForCriticalHit();
+
+        // Calculate snow based on whether it's a critical hit
+        let snowGained;
+        if (isCriticalHit) {
+            snowGained = this.calculateCriticalHitSnow();
+        } else {
+            snowGained = AppState.snowPerClick;
+        }
+
+        // Add the snow to the player's total
+        AppState.snowAmount += snowGained;
+        AppState.totalSnowEver += snowGained;
+        AppState.totalClicks++;
 
         // Record timestamp for tracking click frequency achievements
-        const now = Date.now()
-        this.clickTimestamps.push(now)
+        const now = Date.now();
+        this.clickTimestamps.push(now);
 
         // Only keep timestamps from the last 5 seconds for click frequency tracking
-        this.clickTimestamps = this.clickTimestamps.filter(time => now - time < 5000)
+        this.clickTimestamps = this.clickTimestamps.filter(time => now - time < 5000);
 
         // Check if player clicked 10 times in 5 seconds (for the clicking frenzy achievement)
-        this.checkClickingFrenzyAchievement()
+        this.checkClickingFrenzyAchievement();
 
-        this.checkAchievements()
-        this.createSnowflakeEffect()
+        this.checkAchievements();
+
+        // Create visual effect
+        if (!isCriticalHit) {
+            this.createSnowflakeEffect();
+        }
 
         // Check if we've unlocked any upgrades or generators
-        this.checkUnlocks()
+        this.checkUnlocks();
+
+        // Return result for UI updates
+        return { isCriticalHit, snowGained };
     }
 
     /**
@@ -96,7 +157,7 @@ class SnowService {
         if (upgrade.currentLevel >= upgrade.maxLevel) {
             return Infinity
         }
-        return Math.floor(upgrade.cost * Math.pow(upgrade.costMultiplier, upgrade.currentLevel))
+        return Math.floor(upgrade.cost * Math.pow(upgrade.costMultiplier || 1, upgrade.currentLevel))
     }
 
     /**
@@ -179,6 +240,23 @@ class SnowService {
                 targetUpgrade.unlocked = true
             }
         }
+
+        // Handle special effects
+        if (upgrade.effects.specialEffect) {
+            switch (upgrade.effects.specialEffect) {
+                case 'criticalChance':
+                    // Each level increases critical hit chance by 5%
+                    AppState.criticalHitChance += 0.05;
+                    break;
+
+                case 'criticalPower':
+                    // Each level increases critical hit multiplier by 0.5x
+                    AppState.criticalHitMultiplier += 0.5;
+                    break;
+
+                // Add other special effects as needed
+            }
+        }
     }
 
     /**
@@ -216,7 +294,7 @@ class SnowService {
      * @returns {number} - The cost
      */
     getGeneratorCost(generator) {
-        return Math.floor(generator.baseCost * Math.pow(generator.costMultiplier, generator.count))
+        return Math.floor(generator.baseCost * Math.pow(generator.costMultiplier || 1.15, generator.count))
     }
 
     /**
@@ -310,7 +388,14 @@ class SnowService {
             }
         }
 
-        // More unlock conditions can be added here
+        // Unlock critical power upgrade after player gets their first critical hit
+        if (AppState.criticalHitsLanded >= 1 && !this.isUpgradeUnlocked('critical-power')) {
+            const upgrade = this.getUpgradeById('critical-power')
+            if (upgrade) {
+                upgrade.visible = true
+                upgrade.unlocked = true
+            }
+        }
     }
 
     /**
@@ -412,6 +497,9 @@ class SnowService {
                     case 'upgradesPurchased':
                         currentValue = AppState.upgradesPurchased
                         break
+                    case 'criticalHits':
+                        currentValue = AppState.criticalHitsLanded
+                        break
                 }
 
                 // Check if achievement is completed
@@ -449,6 +537,9 @@ class SnowService {
             generatorsPurchased: AppState.generatorsPurchased,
             upgradesPurchased: AppState.upgradesPurchased,
             firstTimePlayer: AppState.firstTimePlayer,
+            criticalHitChance: AppState.criticalHitChance,
+            criticalHitMultiplier: AppState.criticalHitMultiplier,
+            criticalHitsLanded: AppState.criticalHitsLanded,
 
             // Save upgrade data
             upgrades: AppState.upgrades.map(upgrade => ({
@@ -495,6 +586,9 @@ class SnowService {
             AppState.generatorsPurchased = gameData.generatorsPurchased || 0
             AppState.upgradesPurchased = gameData.upgradesPurchased || 0
             AppState.firstTimePlayer = gameData.firstTimePlayer !== undefined ? gameData.firstTimePlayer : true
+            AppState.criticalHitChance = gameData.criticalHitChance || 0.05
+            AppState.criticalHitMultiplier = gameData.criticalHitMultiplier || 2
+            AppState.criticalHitsLanded = gameData.criticalHitsLanded || 0
 
             // Load upgrades
             if (gameData.upgrades && Array.isArray(gameData.upgrades)) {
@@ -555,12 +649,16 @@ class SnowService {
         AppState.totalTimePlayed = 0
         AppState.generatorsPurchased = 0
         AppState.upgradesPurchased = 0
+        AppState.criticalHitChance = 0.05
+        AppState.criticalHitMultiplier = 2
+        AppState.criticalHitsLanded = 0
 
         // Reset upgrades
         AppState.upgrades.forEach(upgrade => {
             upgrade.currentLevel = 0
-            upgrade.visible = upgrade.id === 'better-gloves' || upgrade.id === 'snow-shovel' // Only the first two upgrades visible by default
-            upgrade.unlocked = upgrade.id === 'better-gloves' || upgrade.id === 'snow-shovel' // Only the first two upgrades unlocked by default
+            // Default visibility based on upgrade ID
+            upgrade.visible = ['better-gloves', 'snow-shovel', 'critical-chance', 'click-training', 'cold-fusion'].includes(upgrade.id)
+            upgrade.unlocked = ['better-gloves', 'snow-shovel', 'critical-chance', 'click-training', 'cold-fusion'].includes(upgrade.id)
         })
 
         // Reset generators

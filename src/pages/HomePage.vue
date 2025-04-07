@@ -18,8 +18,17 @@
         <div class="text-center mb-5">
           <div class="snow-area" @click="makeSnow">
             <div class="snow-pile"></div>
+            <!-- Critical hit effect -->
+            <div v-if="showCriticalEffect" class="critical-hit-effect">
+              <span>CRITICAL!</span>
+              <span class="critical-snow">+{{ formatNumber(lastCriticalSnow) }}</span>
+            </div>
           </div>
           <p class="mt-2">Click to make snow!</p>
+          <div class="critical-stats">
+            <p>Critical Chance: {{ (criticalHitChance * 100).toFixed(1) }}%</p>
+            <p>Critical Multiplier: {{ criticalHitMultiplier.toFixed(1) }}x</p>
+          </div>
         </div>
 
         <!-- Achievements section with tabs -->
@@ -54,6 +63,12 @@
               <button class="nav-link" id="special-tab" data-bs-toggle="tab" data-bs-target="#special-achievements" 
                       type="button" role="tab" aria-controls="special-achievements" aria-selected="false">
                 Special
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="critical-tab" data-bs-toggle="tab" data-bs-target="#critical-achievements" 
+                      type="button" role="tab" aria-controls="critical-achievements" aria-selected="false">
+                Critical
               </button>
             </li>
           </ul>
@@ -118,6 +133,18 @@
                 </div>
               </div>
             </div>
+
+            <!-- Critical Hit Achievements tab -->
+            <div class="tab-pane fade" id="critical-achievements" role="tabpanel" aria-labelledby="critical-tab">
+              <div class="row">
+                <div v-for="achievement in achievementsByType('criticalHits')" :key="achievement.id" class="col-6 col-md-4 mb-2">
+                  <div class="achievement-card p-2" :class="{ 'achieved': achievement.achieved }">
+                    <h5>{{ achievement.icon }} {{ achievement.name }}</h5>
+                    <p class="mb-0">{{ achievement.description }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -135,6 +162,9 @@
               <div>
                 <h5>{{ upgrade.icon }} {{ upgrade.name }}</h5>
                 <p class="mb-0">{{ upgrade.description }}</p>
+                <p v-if="upgrade.maxLevel > 1" class="text-muted small">
+                  Level: {{ upgrade.currentLevel }}/{{ upgrade.maxLevel }}
+                </p>
               </div>
               <span v-if="!isUpgradeMaxed(upgrade)" class="badge bg-primary">{{ formatNumber(getUpgradeNextLevelCost(upgrade)) }} ❄️</span>
               <span v-else class="badge bg-success">MAX</span>
@@ -185,8 +215,8 @@
             <div class="col-6 col-md-3">
               <div class="card stat-card">
                 <div class="card-body">
-                  <h5 class="card-title">Generators</h5>
-                  <p class="card-text">{{ generatorCount }}</p>
+                  <h5 class="card-title">Critical Hits</h5>
+                  <p class="card-text">{{ formatNumber(criticalHitsLanded) }}</p>
                 </div>
               </div>
             </div>
@@ -210,7 +240,7 @@
 
 <script>
 import { AppState } from '../AppState.js'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { snowService } from '../services/SnowService.js'
 
 export default {
@@ -220,6 +250,10 @@ export default {
       snowService.init()
     })
 
+    // Critical hit state
+    const showCriticalEffect = ref(false)
+    const lastCriticalSnow = ref(0)
+
     // Computed properties
     const snowAmount = computed(() => AppState.snowAmount)
     const snowPerClick = computed(() => AppState.snowPerClick)
@@ -227,6 +261,9 @@ export default {
     const totalSnowEver = computed(() => AppState.totalSnowEver)
     const totalClicks = computed(() => AppState.totalClicks)
     const totalTimePlayed = computed(() => AppState.totalTimePlayed)
+    const criticalHitChance = computed(() => AppState.criticalHitChance)
+    const criticalHitMultiplier = computed(() => AppState.criticalHitMultiplier)
+    const criticalHitsLanded = computed(() => AppState.criticalHitsLanded)
     
     const visibleUpgrades = computed(() => {
       return AppState.upgrades.filter(upgrade => upgrade.visible && upgrade.unlocked)
@@ -260,7 +297,18 @@ export default {
     }
     
     function makeSnow() {
-      snowService.makeSnow()
+      const result = snowService.makeSnow()
+      
+      // If it was a critical hit, show the effect
+      if (result.isCriticalHit) {
+        lastCriticalSnow.value = result.snowGained
+        showCriticalEffect.value = true
+        
+        // Hide the effect after 1 second
+        setTimeout(() => {
+          showCriticalEffect.value = false
+        }, 1000)
+      }
     }
     
     function buyUpgrade(upgrade) {
@@ -324,12 +372,17 @@ export default {
       totalSnowEver,
       totalClicks,
       totalTimePlayed,
+      criticalHitChance,
+      criticalHitMultiplier,
+      criticalHitsLanded,
       visibleUpgrades,
       visibleGenerators,
       achievements,
       completedAchievements,
       generatorCount,
       productionAchievements,
+      showCriticalEffect,
+      lastCriticalSnow,
       achievementsByType,
       makeSnow,
       buyUpgrade,
@@ -402,5 +455,51 @@ export default {
 .stat-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Critical hit effect styles */
+.critical-hit-effect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ff6b6b;
+  font-weight: bold;
+  font-size: 24px;
+  text-shadow: 0 0 10px yellow, 0 0 20px orange;
+  animation: critical-pulse 1s ease-out;
+  pointer-events: none;
+}
+
+.critical-snow {
+  font-size: 20px;
+  color: #339af0;
+}
+
+@keyframes critical-pulse {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.critical-stats {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  font-size: 14px;
+  color: #666;
 }
 </style>
