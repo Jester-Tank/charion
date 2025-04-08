@@ -1,4 +1,44 @@
 <template>
+  <!-- Winter Background -->
+  <div class="winter-background">
+    <!-- Sky elements -->
+    <div class="stars"></div>
+    <div class="moon"></div>
+    
+    <!-- Far background mountains -->
+    <svg class="mountains-bg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
+      <path class="mountain-range-bg" d="M0,224L60,213.3C120,203,240,181,360,192C480,203,600,245,720,245.3C840,245,960,203,1080,186.7C1200,171,1320,181,1380,186.7L1440,192L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path>
+      <path class="snow-caps" d="M0,224L60,213.3C120,203,240,181,360,192C480,203,600,245,720,245.3C840,245,960,203,1080,186.7C1200,171,1320,181,1380,186.7L1440,192L1440,224L1380,218C1320,212,1200,200,1080,202C960,204,840,220,720,220C600,220,480,204,360,202C240,200,120,212,60,218L0,224Z"></path>
+    </svg>
+    
+    <!-- Mid-ground mountains -->
+    <svg class="mountains-mid" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
+      <path class="mountain-range-mid" d="M0,160L48,176C96,192,192,224,288,224C384,224,480,192,576,176C672,160,768,160,864,176C960,192,1056,224,1152,218.7C1248,213,1344,171,1392,149.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+      <path class="snow-caps" d="M0,160L48,176C96,192,192,224,288,224C384,224,480,192,576,176C672,160,768,160,864,176C960,192,1056,224,1152,218.7C1248,213,1344,171,1392,149.3L1440,128L1440,160L1392,170C1344,180,1248,200,1152,193C1056,186,960,154,864,149C768,144,672,166,576,170C480,174,384,160,288,160C192,160,96,174,48,181L0,188Z"></path>
+    </svg>
+    
+    <!-- Foreground mountains -->
+    <svg class="mountains" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
+      <path class="mountain-range" d="M0,256L48,240C96,224,192,192,288,192C384,192,480,224,576,240C672,256,768,256,864,234.7C960,213,1056,171,1152,160C1248,149,1344,171,1392,181.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+      <path class="snow-caps" d="M0,256L48,240C96,224,192,192,288,192C384,192,480,224,576,240C672,256,768,256,864,234.7C960,213,1056,171,1152,160C1248,149,1344,171,1392,181.3L1440,192L1440,224L1392,228C1344,232,1248,240,1152,226C1056,212,960,176,864,170C768,164,672,188,576,194C480,200,384,188,288,194C192,200,96,224,48,236L0,248Z"></path>
+    </svg>
+    
+    <!-- Trees layer -->
+    <svg class="trees" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
+      <path class="tree-line" d="M0,288L48,272C96,256,192,224,288,213.3C384,203,480,213,576,229.3C672,245,768,267,864,261.3C960,256,1056,224,1152,213.3C1248,203,1344,213,1392,218.7L1440,224L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+      <path class="tree-snow" d="M0,288L48,272C96,256,192,224,288,213.3C384,203,480,213,576,229.3C672,245,768,267,864,261.3C960,256,1056,224,1152,213.3C1248,203,1344,213,1392,218.7L1440,224L1440,256L1392,258C1344,260,1248,264,1152,260C1056,256,960,244,864,244C768,244,672,256,576,256C480,256,384,244,288,244C192,244,96,256,48,262L0,268Z"></path>
+    </svg>
+    
+    <!-- Ground with snow -->
+    <div class="ground"></div>
+    
+    <!-- Snow layers -->
+    <div class="snow-back" ref="snowBackLayer"></div>
+    <div class="snow-mid" ref="snowMidLayer"></div>
+    <div class="snow-front" ref="snowFrontLayer"></div>
+  </div>
+
+  <!-- Main Game Content -->
   <section class="container-fluid">
     <section class="row">
       <!-- Header section with game stats -->
@@ -245,14 +285,105 @@ import { snowService } from '../services/SnowService.js'
 
 export default {
   setup() {
-    // Initialize the game when component mounts
-    onMounted(() => {
-      snowService.init()
-    })
-
+    // Winter background refs
+    const snowFrontLayer = ref(null)
+    const snowMidLayer = ref(null)
+    const snowBackLayer = ref(null)
+    
     // Critical hit state
     const showCriticalEffect = ref(false)
     const lastCriticalSnow = ref(0)
+
+    // Initialize the game when component mounts
+    onMounted(() => {
+      snowService.init()
+      createSnowflakes()
+      maintainSnowfall()
+    })
+
+    // Create snowflakes for winter background
+    function createSnowflakes() {
+      if (snowFrontLayer.value && snowMidLayer.value && snowBackLayer.value) {
+        // Create front layer snowflakes
+        for (let i = 0; i < 30; i++) {
+          createSnowflake(snowFrontLayer.value, 'snowflake', getRandomDuration(12, 18))
+        }
+        
+        // Create mid layer snowflakes
+        for (let i = 0; i < 50; i++) {
+          createSnowflake(snowMidLayer.value, 'snowflake-mid', getRandomDuration(16, 24))
+        }
+        
+        // Create back layer snowflakes
+        for (let i = 0; i < 70; i++) {
+          createSnowflake(snowBackLayer.value, 'snowflake-back', getRandomDuration(20, 30))
+        }
+      }
+    }
+
+    // Helper function to create a single snowflake with more randomness
+    function createSnowflake(container, className, duration) {
+      const snowflake = document.createElement('div')
+      snowflake.className = className
+      
+      // More random positioning
+      snowflake.style.left = `${Math.random() * 100}%`
+      snowflake.style.top = `${Math.random() * 100}%`
+      
+      // Random size variation (within the class base size)
+      const sizeVariation = 0.8 + Math.random() * 0.4 // 80% to 120% of base size
+      snowflake.style.transform = `scale(${sizeVariation})`
+      
+      // Random animation properties
+      snowflake.style.animationDuration = `${duration}s`
+      snowflake.style.animationDelay = `${Math.random() * 10}s` // More varied delays
+      
+      // Slight opacity variation
+      const opacityVariation = 0.7 + Math.random() * 0.3
+      snowflake.style.opacity = opacityVariation.toString()
+      
+      container.appendChild(snowflake)
+    }
+
+    // Helper function to get a random duration
+    function getRandomDuration(min, max) {
+      return Math.random() * (max - min) + min
+    }
+
+    // Function to create additional snowflakes periodically
+    function maintainSnowfall() {
+      setInterval(() => {
+        if (snowFrontLayer.value) {
+          // Add a new front snowflake
+          createSnowflake(snowFrontLayer.value, 'snowflake', getRandomDuration(12, 18))
+          
+          // Remove excess snowflakes to prevent memory issues
+          if (snowFrontLayer.value.children.length > 40) {
+            snowFrontLayer.value.removeChild(snowFrontLayer.value.children[0])
+          }
+        }
+        
+        if (snowMidLayer.value) {
+          // Add a new mid snowflake
+          createSnowflake(snowMidLayer.value, 'snowflake-mid', getRandomDuration(16, 24))
+          
+          // Remove excess snowflakes
+          if (snowMidLayer.value.children.length > 60) {
+            snowMidLayer.value.removeChild(snowMidLayer.value.children[0])
+          }
+        }
+        
+        if (snowBackLayer.value) {
+          // Add a new back snowflake
+          createSnowflake(snowBackLayer.value, 'snowflake-back', getRandomDuration(20, 30))
+          
+          // Remove excess snowflakes
+          if (snowBackLayer.value.children.length > 80) {
+            snowBackLayer.value.removeChild(snowBackLayer.value.children[0])
+          }
+        }
+      }, 2000) // Add new snowflakes every 2 seconds
+    }
 
     // Computed properties
     const snowAmount = computed(() => AppState.snowAmount)
@@ -383,6 +514,9 @@ export default {
       productionAchievements,
       showCriticalEffect,
       lastCriticalSnow,
+      snowFrontLayer,
+      snowMidLayer,
+      snowBackLayer,
       achievementsByType,
       makeSnow,
       buyUpgrade,
@@ -400,6 +534,243 @@ export default {
 </script>
 
 <style scoped>
+/* Base background with gradient sky */
+.winter-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+  background: linear-gradient(to bottom, #94c5f8 0%, #c9e2ff 50%, #e8f1ff 100%);
+}
+
+/* Stars for night sky effect */
+.stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60%;
+  background-image: 
+    radial-gradient(1px 1px at 25px 5px, white, rgba(255,255,255,0)),
+    radial-gradient(1px 1px at 50px 25px, white, rgba(255,255,255,0)),
+    radial-gradient(1px 1px at 125px 20px, white, rgba(255,255,255,0)),
+    radial-gradient(1.5px 1.5px at 50px 75px, white, rgba(255,255,255,0)),
+    radial-gradient(2px 2px at 15px 125px, white, rgba(255,255,255,0)),
+    radial-gradient(2.5px 2.5px at 110px 80px, white, rgba(255,255,255,0));
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  opacity: 0.5;
+}
+
+/* Moon */
+.moon {
+  position: absolute;
+  top: 50px;
+  right: 100px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 0 40px 20px rgba(255, 255, 255, 0.4);
+}
+
+/* Mountains far background */
+.mountains-bg {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 30%;
+  z-index: -1;
+}
+
+.mountain-range-bg {
+  fill: #b5d3fa;
+  stroke: none;
+}
+
+/* Mountains mid-ground */
+.mountains-mid {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 25%;
+  z-index: 0;
+  animation: slide-mountains-mid 120s linear infinite;
+}
+
+.mountain-range-mid {
+  fill: #93b6da;
+  stroke: none;
+}
+
+/* Mountains foreground */
+.mountains {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 20%;
+  animation: slide-mountains 80s linear infinite;
+}
+
+.mountain-range {
+  fill: #7496b8;
+  stroke: none;
+}
+
+/* Snow caps on mountains */
+.snow-caps {
+  fill: #ffffff;
+  stroke: none;
+}
+
+/* Trees layer */
+.trees {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 15%;
+  animation: slide-trees 30s linear infinite;
+}
+
+.tree-line {
+  fill: #2d462d;
+  stroke: none;
+}
+
+.tree-snow {
+  fill: #ffffff;
+  stroke: none;
+}
+
+/* Ground with snow */
+.ground {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 10%;
+  background-color: #ffffff;
+  z-index: 1;
+}
+
+/* Create different snow layers */
+.snow-back, .snow-mid, .snow-front {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* Snowflake styles */
+.snowflake {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.8;
+  animation-name: snowfall-front;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+.snowflake-mid {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.6;
+  animation-name: snowfall-mid;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.6);
+}
+
+.snowflake-back {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.4;
+  animation-name: snowfall-back;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
+/* Animation keyframes */
+@keyframes slide-mountains {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slide-mountains-mid {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slide-trees {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes snowfall-front {
+  0% {
+    transform: translateY(-10%) translateX(-5px);
+  }
+  100% {
+    transform: translateY(105%) translateX(20px);
+  }
+}
+
+@keyframes snowfall-mid {
+  0% {
+    transform: translateY(-10%) translateX(-2px);
+  }
+  100% {
+    transform: translateY(105%) translateX(10px);
+  }
+}
+
+@keyframes snowfall-back {
+  0% {
+    transform: translateY(-10%) translateX(-1px);
+  }
+  100% {
+    transform: translateY(105%) translateX(5px);
+  }
+}
+
+/* Main Game Styles */
+.container-fluid {
+  position: relative;
+  z-index: 10;
+  border-radius: 10px;
+  margin-top: 20px;
+  padding: 20px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
 .snow-area {
   width: 300px;
   height: 300px;

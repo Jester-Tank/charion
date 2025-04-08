@@ -1,4 +1,4 @@
-/// AppState.js
+// AppState.js
 import { reactive } from 'vue'
 
 // Create the AppState
