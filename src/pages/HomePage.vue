@@ -54,10 +54,38 @@
 
       <!-- Main game section -->
       <div class="col-12 col-md-7">
-        <!-- Clickable snow area -->
+        <!-- Snowflake button -->
         <div class="text-center mb-5">
           <div class="snow-area" @click="makeSnow">
+            <div class="snowflake-button">
+              <!-- Main snowflake structure -->
+              <div class="snowflake-center"></div>
+              
+              <!-- Snowflake arms -->
+              <div class="arm arm-1">
+                <!-- Each arm has 4 sub-arms -->
+                <div class="sub-arm sub-arm-1"></div>
+                <div class="sub-arm sub-arm-2"></div>
+                <div class="sub-arm sub-arm-3"></div>
+                <div class="sub-arm sub-arm-4"></div>
+              </div>
+              <div class="arm arm-2">
+                <div class="sub-arm sub-arm-1"></div>
+                <div class="sub-arm sub-arm-2"></div>
+                <div class="sub-arm sub-arm-3"></div>
+                <div class="sub-arm sub-arm-4"></div>
+              </div>
+              <div class="arm arm-3">
+                <div class="sub-arm sub-arm-1"></div>
+                <div class="sub-arm sub-arm-2"></div>
+                <div class="sub-arm sub-arm-3"></div>
+                <div class="sub-arm sub-arm-4"></div>
+              </div>
+            </div>
+            
+            <!-- Snow pile (for consistency) -->
             <div class="snow-pile"></div>
+            
             <!-- Critical hit effect -->
             <div v-if="showCriticalEffect" class="critical-hit-effect">
               <span>CRITICAL!</span>
@@ -276,7 +304,7 @@
       </div>
     </section>
   </section>
-</template>
+  </template>
 
 <script>
 import { AppState } from '../AppState.js'
@@ -385,6 +413,36 @@ export default {
       }, 2000) // Add new snowflakes every 2 seconds
     }
 
+    // Function to create a small snowflake particle at the click position
+    function createClickSnowflake() {
+      // Create a small snowflake particle at a random position
+      const snowArea = document.querySelector('.snow-area')
+      if (!snowArea) return
+      
+      const particle = document.createElement('div')
+      particle.className = 'click-particle'
+      
+      // Random position within the snow area
+      const x = Math.random() * 250 + 25
+      const y = Math.random() * 250 + 25
+      
+      // Set properties
+      particle.style.left = `${x}px`
+      particle.style.top = `${y}px`
+      particle.style.width = `${Math.random() * 10 + 5}px`
+      particle.style.height = particle.style.width
+      
+      // Add to DOM
+      snowArea.appendChild(particle)
+      
+      // Remove after animation
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle)
+        }
+      }, 1000)
+    }
+
     // Computed properties
     const snowAmount = computed(() => AppState.snowAmount)
     const snowPerClick = computed(() => AppState.snowPerClick)
@@ -429,6 +487,21 @@ export default {
     
     function makeSnow() {
       const result = snowService.makeSnow()
+      
+      // Add a pulse animation to the snowflake when clicked
+      const snowflakeButton = document.querySelector('.snowflake-button')
+      if (snowflakeButton) {
+        // Add pulse class
+        snowflakeButton.classList.add('pulse')
+        
+        // Generate a small random snowflake at the click position
+        createClickSnowflake()
+        
+        // Remove class after animation completes
+        setTimeout(() => {
+          snowflakeButton.classList.remove('pulse')
+        }, 300)
+      }
       
       // If it was a critical hit, show the effect
       if (result.isCriticalHit) {
@@ -532,6 +605,7 @@ export default {
   }
 }
 </script>
+
 
 <style scoped>
 /* Base background with gradient sky */
@@ -761,41 +835,179 @@ export default {
   }
 }
 
-/* Main Game Styles */
-.container-fluid {
-  position: relative;
-  z-index: 10;
-  border-radius: 10px;
-  margin-top: 20px;
-  padding: 20px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-}
-
+/* Snowflake Button Styles */
 .snow-area {
   width: 300px;
   height: 300px;
   margin: 0 auto;
   position: relative;
-  background-color: #f0f8ff;
-  border-radius: 50%;
+  background-color: transparent;
   cursor: pointer;
   transition: transform 0.1s;
-  overflow: hidden;
-  border: 4px solid #e1e1e1;
 }
 
 .snow-area:active {
   transform: scale(0.95);
 }
 
-.snow-pile {
+.snowflake-button {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  animation: slow-rotate 20s linear infinite;
+}
+
+/* Main snowflake shape */
+.snowflake-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  height: 90%;
   background-color: white;
-  border-radius: 50% 50% 0 0;
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.7), 
+              0 0 15px rgba(255, 255, 255, 0.5) inset;
+}
+
+/* Create the snowflake arms */
+.arm {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 180px;
+  height: 30px;
+  background-color: white;
+  transform-origin: center;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.arm-1 {
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
+.arm-2 {
+  transform: translate(-50%, -50%) rotate(60deg);
+}
+
+.arm-3 {
+  transform: translate(-50%, -50%) rotate(120deg);
+}
+
+/* Add diagonal detail arms */
+.sub-arm {
+  position: absolute;
+  width: 40px;
+  height: 15px;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+.sub-arm-1 {
+  top: -7px;
+  left: 40px;
+  transform: rotate(-40deg);
+}
+
+.sub-arm-2 {
+  top: -7px;
+  right: 40px;
+  transform: rotate(40deg);
+}
+
+.sub-arm-3 {
+  bottom: -7px;
+  left: 40px;
+  transform: rotate(40deg);
+}
+
+.sub-arm-4 {
+  bottom: -7px;
+  right: 40px;
+  transform: rotate(-40deg);
+}
+
+/* Shimmer effect on hover */
+.snowflake-button:hover .snowflake-center,
+.snowflake-button:hover .arm,
+.snowflake-button:hover .sub-arm {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 50%, #ffffff 100%);
+  animation: shimmer 2s infinite;
+}
+
+/* Pulse animation for click effect */
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.pulse .snowflake-center,
+.pulse .arm {
+  animation: pulse 0.3s ease-out;
+}
+
+/* Snowflake particles created on click */
+.click-particle {
+  position: absolute;
+  background-color: white;
+  border-radius: 50%;
+  opacity: 0.8;
+  pointer-events: none;
+  animation: float-away 1s ease-out forwards;
+}
+
+@keyframes float-away {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-50px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes slow-rotate {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -100px;
+  }
+  100% {
+    background-position: 100px;
+  }
+}
+
+/* Main Game Styles */
+.container-fluid {
+  position: relative;
+  z-index: 10;
+  
+  border-radius: 10px;
+  margin-top: 20px;
+  padding: 20px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 }
 
 .achievement-card {
@@ -844,6 +1056,7 @@ export default {
   text-shadow: 0 0 10px yellow, 0 0 20px orange;
   animation: critical-pulse 1s ease-out;
   pointer-events: none;
+  z-index: 10;
 }
 
 .critical-snow {
