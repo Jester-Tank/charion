@@ -1,0 +1,1 @@
+import{_ as t,a as o,b as s,o as a}from"./index-tav3YfgH.js";const n={},r={class:"about"};function c(_,e){return a(),o("div",r,e[0]||(e[0]=[s("h1",null,"This is the about page",-1)]))}const l=t(n,[["render",c]]);export{l as default};
