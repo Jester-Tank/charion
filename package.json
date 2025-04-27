@@ -6,14 +6,15 @@
     "dev": "vite",
     "serve": "vite",
     "build": "vite build",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+    "deploy": "npm run build && gh-pages -d dist"
   },
   "type": "module",
   "dependencies": {
     "@bcwdev/auth0provider-client": "0.1.12",
     "@mdi/font": "7.4.47",
     "@popperjs/core": "2.11.8",
-    "axios": "1.7.4",
+    "axios": "^1.8.4",
     "bootstrap": "5.3.3",
     "socket.io-client": "4.7.5",
     "vue": "^3.4.37",
@@ -24,6 +25,7 @@
     "@vitejs/plugin-vue": "^5.1.2",
     "eslint": "^9.11.1",
     "eslint-plugin-vue": "^9.28.0",
+    "gh-pages": "^6.3.0",
     "globals": "^15.10.0",
     "sass": "1.77.8",
     "vite": "^5.4.0",
